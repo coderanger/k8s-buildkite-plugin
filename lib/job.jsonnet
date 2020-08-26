@@ -275,8 +275,8 @@ function(jobName, agentEnv={}, stepEnvFile='', patchFunc=identity) patchFunc({
 
   local commandArgs =
     if env.BUILDKITE_COMMAND != '' then {
-      command: ['/bin/sh', '-c'],
-      args: [env.BUILDKITE_COMMAND],
+      command: ['/bin/bash', '-c'],
+      args: ['set -euo pipefail;' + env.BUILDKITE_COMMAND],
     } else {
       command: [env[f] for f in std.sort(std.objectFields(env), numberSuffix) if std.startsWith(f, 'BUILDKITE_PLUGIN_K8S_ENTRYPOINT_')],
       args: [env[f] for f in std.sort(std.objectFields(env), numberSuffix) if std.startsWith(f, 'BUILDKITE_PLUGIN_K8S_COMMAND_')],

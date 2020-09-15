@@ -62,7 +62,7 @@ function tail_logs {
 
 # Extract job metadata to env vars.
 for key in $(buildkite-agent meta-data keys); do
-  set keyUpper="${key^^}"
+  keyUpper="${key^^}"
   export "${keyUpper//-/_}=$(buildkite-agent meta-data get "$key")"
 done
 

@@ -42,7 +42,7 @@ local labelValue(s) =
   ]);
   if std.length(sanitizedValue) < 63 then sanitizedValue else std.substr(sanitizedValue, 0, 63);
 
-function(jobName, agentEnv={}, stepEnvFile='', patchFunc=identity) patchFunc({
+function(jobName, agentEnv={}, stepEnvFile='', patchFunc=identity, jobMetadataFile='') patchFunc({
   local buildSubPath = std.join('/', [
     env.BUILDKITE_AGENT_NAME,
     env.BUILDKITE_ORGANIZATION_SLUG,
@@ -132,6 +132,25 @@ function(jobName, agentEnv={}, stepEnvFile='', patchFunc=identity) patchFunc({
       for f in std.objectFields(env)
       if std.startsWith(f, 'BUILDKITE_PLUGIN_K8S_INIT_ENVIRONMENT_FROM_SECRET')
     ],
+
+  local jobMetadata =
+    [
+      {
+        local kv = std.splitLimit(l, '=', 1),
+        key: kv[0],
+        value: kv[1],
+      }
+      for l in std.split(jobMetadataFile, '\n')
+      if l != ''
+    ],
+
+  local interpolateJobMetadata(s) =
+    local inner(acc, arr) =
+      if std.length(arr) == 0 then
+        acc
+      else
+        inner(std.strReplace(acc, "${" + arr[0].key + "}", arr[0].value), arr[1:]);
+      inner(s, jobMetadata),
 
   local labels = {
     'build/branch': labelValue(env.BUILDKITE_BRANCH),
@@ -321,7 +340,7 @@ function(jobName, agentEnv={}, stepEnvFile='', patchFunc=identity) patchFunc({
         containers: [
           {
             name: 'step',
-            image: env.BUILDKITE_PLUGIN_K8S_IMAGE,
+            image: interpolateJobMetadata(env.BUILDKITE_PLUGIN_K8S_IMAGE),
             imagePullPolicy: if env.BUILDKITE_PLUGIN_K8S_ALWAYS_PULL == 'true' then 'Always' else 'IfNotPresent',
             env: podEnv,
             envFrom: secretEnv,

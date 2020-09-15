@@ -60,6 +60,12 @@ function tail_logs {
   echo "0" > "$job_log_complete_marker_file"
 }
 
+# Extract job metadata to a file for use in Jsonnet.
+for key in $(buildkite-agent meta-data keys); do
+  echo -n "$key=" >> metadata
+  buildkite-agent meta-data get "$key" >> metadata
+done
+
 echo "--- :kubernetes: Starting Kubernetes Job"
 
 export patchFunc=${BUILDKITE_PLUGIN_K8S_PATCH:-"function(f) f"}
@@ -69,6 +75,7 @@ job_spec="$(jsonnet \
   --tla-str-file "stepEnvFile=${BUILDKITE_ENV_FILE}" \
   --tla-code "agentEnv=$(jq -c -n env)" \
   --tla-code patchFunc \
+  --tla-str-file jobMetadataFile=metadata \
   "${basedir}/lib/job.jsonnet")"
 
 if [[ "$use_agent_node_affinity" == "true" ]]; then

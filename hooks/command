@@ -1,7 +1,6 @@
 #!/bin/bash
 
 set -euo pipefail
-set -x
 
 basedir="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && cd .. && pwd )"
 
@@ -65,7 +64,7 @@ function tail_logs {
 for key in $(buildkite-agent meta-data keys); do
   if [[ "$key" != buildkite* ]]; then
     keyUpper="${key^^}"
-    export "${keyUpper//-/_}=$(buildkite-agent meta-data get "$key")"
+    export "METADATA_${keyUpper//-/_}=$(buildkite-agent meta-data get "$key")"
   fi
 done
 

@@ -61,6 +61,7 @@ function tail_logs {
 }
 
 # Extract job metadata to a file for use in Jsonnet.
+touch metadata
 for key in $(buildkite-agent meta-data keys); do
   echo -n "$key=" >> metadata
   buildkite-agent meta-data get "$key" >> metadata

@@ -242,7 +242,7 @@ function(jobName, agentEnv={}, stepEnvFile='', patchFunc=identity) patchFunc({
       for c in cfg
     ],
     volume: [
-      { name: c[0], hostPath: { path: c[1], type: if std.length(c) == 3 then 'DirectoryOrCreate' else c[4] } }
+      { name: c[0], hostPath: { path: c[1], type: if std.length(c) == 3 then 'DirectoryOrCreate' else c[3] } }
       for c in cfg
     ],
   },

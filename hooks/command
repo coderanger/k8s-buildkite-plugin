@@ -63,8 +63,10 @@ function tail_logs {
 
 # Extract job metadata to env vars.
 for key in $(buildkite-agent meta-data keys); do
-  keyUpper="${key^^}"
-  export "${keyUpper//-/_}=$(buildkite-agent meta-data get "$key")"
+  if [[ "$key" != buildkite* ]]; then
+    keyUpper="${key^^}"
+    export "${keyUpper//-/_}=$(buildkite-agent meta-data get "$key")"
+  fi
 done
 
 # Update BUILDKITE_PLUGIN_K8S_IMAGE with envsubst.

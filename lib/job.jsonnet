@@ -231,7 +231,7 @@ function(jobName, agentEnv={}, stepEnvFile='', patchFunc=identity) patchFunc({
       std.mapWithIndex(
         function(i, v) ['hostpath-' + i] + v,
         [
-          std.splitLimit(env[f], ':', 1)
+          std.splitLimit(env[f], ':', 2)
           for f in std.objectFields(env)
           if std.startsWith(f, 'BUILDKITE_PLUGIN_K8S_MOUNT_HOSTPATH')
              && env[f] != ''
@@ -242,7 +242,7 @@ function(jobName, agentEnv={}, stepEnvFile='', patchFunc=identity) patchFunc({
       for c in cfg
     ],
     volume: [
-      { name: c[0], hostPath: { path: c[1], type: 'DirectoryOrCreate' } }
+      { name: c[0], hostPath: { path: c[1], type: if std.length(c) == 3 then 'DirectoryOrCreate' else c[4] } }
       for c in cfg
     ],
   },

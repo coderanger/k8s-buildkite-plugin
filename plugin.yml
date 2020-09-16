@@ -53,6 +53,8 @@ configuration:
       type: string
     patch:
       type: string
+    container-patch:
+      type: string
     resources-request-cpu:
       type: string
     resources-limit-cpu:

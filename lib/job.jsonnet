@@ -42,7 +42,7 @@ local labelValue(s) =
   ]);
   if std.length(sanitizedValue) < 63 then sanitizedValue else std.substr(sanitizedValue, 0, 63);
 
-function(jobName, agentEnv={}, stepEnvFile='', patchFunc=identity) patchFunc({
+function(jobName, agentEnv={}, stepEnvFile='', patchFunc=identity, containerPatchFunc=identity) patchFunc({
   local buildSubPath = std.join('/', [
     env.BUILDKITE_AGENT_NAME,
     env.BUILDKITE_ORGANIZATION_SLUG,
@@ -319,7 +319,7 @@ function(jobName, agentEnv={}, stepEnvFile='', patchFunc=identity) patchFunc({
           },
         ],
         containers: [
-          {
+          containerPatchFunc({
             name: 'step',
             image: env.BUILDKITE_PLUGIN_K8S_IMAGE,
             imagePullPolicy: if env.BUILDKITE_PLUGIN_K8S_ALWAYS_PULL == 'true' then 'Always' else 'IfNotPresent',
@@ -352,7 +352,7 @@ function(jobName, agentEnv={}, stepEnvFile='', patchFunc=identity) patchFunc({
               { mountPath: '/git-mirrors', name: 'git-mirrors' },
             ] + secretMount.mount + hostPathMount.mount + agentMount,
             workingDir: '/build',
-          } + commandArgs,
+          } + commandArgs),
         ],
         volumes: [
           { name: 'build' } + buildVolume,

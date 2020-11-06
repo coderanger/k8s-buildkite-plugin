@@ -40,7 +40,7 @@ function tail_logs {
   while true;
   do
     set +e
-    log_snapshot="$(timeout "$log_loop_timeout_seconds" kubectl logs --limit-bytes "$log_loop_snapshot_limit_bytes" "job/${job_name}" 2>/dev/null)"
+    log_snapshot="$(timeout "$log_loop_timeout_seconds" kubectl logs --limit-bytes "$log_loop_snapshot_limit_bytes" "job/${job_name}" -c step 2>/dev/null)"
     set -e
     if [[ -n "$log_snapshot" ]]; then
       break

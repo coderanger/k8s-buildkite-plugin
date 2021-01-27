@@ -68,8 +68,10 @@ for key in $(buildkite-agent meta-data keys); do
   fi
 done
 
-# Update BUILDKITE_PLUGIN_K8S_IMAGE with envsubst.
+# Update some config options with envsubst.
 BUILDKITE_PLUGIN_K8S_IMAGE="$(echo $BUILDKITE_PLUGIN_K8S_IMAGE | envsubst)"
+BUILDKITE_PLUGIN_K8S_PATCH="$(echo $BUILDKITE_PLUGIN_K8S_PATCH | envsubst)"
+BUILDKITE_PLUGIN_K8S_CONTAINER_PATCH="$(echo $BUILDKITE_PLUGIN_K8S_CONTAINER_PATCH | envsubst)"
 
 echo "--- :kubernetes: Starting Kubernetes Job"
 

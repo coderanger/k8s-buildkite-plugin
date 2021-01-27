@@ -65,6 +65,8 @@ configuration:
       type: string
     use-agent-node-affinity:
       type: boolean
+    service-account:
+      type: string
   required:
   - image
   additionalProperties: false

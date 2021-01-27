@@ -71,6 +71,7 @@ function(jobName, agentEnv={}, stepEnvFile='', patchFunc=identity, containerPatc
     BUILDKITE_PLUGIN_K8S_RESOURCES_LIMIT_CPU: '',
     BUILDKITE_PLUGIN_K8S_RESOURCES_REQUEST_MEMORY: '',
     BUILDKITE_PLUGIN_K8S_RESOURCES_LIMIT_MEMORY: '',
+    BUILDKITE_PLUGIN_K8S_SERVICE_ACCOUNT: 'default',
     BUILDKITE_PLUGIN_K8S_WORKDIR: std.join('/', [env.BUILDKITE_BUILD_PATH, buildSubPath]),
     BUILDKITE_PLUGIN_K8S_JOB_TTL_SECONDS_AFTER_FINISHED: '86400',
   } + agentEnv,
@@ -305,6 +306,7 @@ function(jobName, agentEnv={}, stepEnvFile='', patchFunc=identity, containerPatc
       spec: {
         activeDeadlineSeconds: deadline,
         restartPolicy: 'Never',
+        serviceAccountName: env.BUILDKITE_PLUGIN_K8S_SERVICE_ACCOUNT,
         initContainers: [
           {
             name: 'bootstrap',

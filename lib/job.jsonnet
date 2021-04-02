@@ -26,6 +26,7 @@ local allowedEnvs = std.set(
     'BUILDKITE_REBUILT_FROM_BUILD_NUMBER',
     'BUILDKITE_REPO',
     'BUILDKITE_SOURCE',
+    'CODECOV_TOKEN',
   ]
 );
 

@@ -175,6 +175,12 @@ function(jobName, agentEnv={}, stepEnvFile='', patchFunc=identity, containerPatc
     else { emptyDir: {} }
   ,
 
+  local gitMirrorsFlags =
+    if env.BUILDKITE_PLUGIN_K8S_GIT_MIRRORS_HOST_PATH != ''
+    then ['--experiment=git-mirrors', '--git-mirrors-path=/git-mirrors']
+    else []
+  ,
+
   local defaultSecretsMounts = {
     mount:
       if env.BUILDKITE_PLUGIN_K8S_DEFAULT_SECRET_NAME == '' then []
@@ -315,7 +321,7 @@ function(jobName, agentEnv={}, stepEnvFile='', patchFunc=identity, containerPatc
           {
             name: 'bootstrap',
             image: env.BUILDKITE_PLUGIN_K8S_INIT_IMAGE,
-            args: ['bootstrap', '--experiment=git-mirrors', '--git-mirrors-path=/git-mirrors', '--ssh-keyscan', '--command', 'true'],
+            args: ['bootstrap', '--ssh-keyscan', '--command', 'true'] + gitMirrorsFlags,
             env: podEnv,
             envFrom: initSecretEnv,
             volumeMounts: [

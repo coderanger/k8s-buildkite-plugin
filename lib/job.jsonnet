@@ -93,6 +93,12 @@ function(jobName, agentEnv={}, stepEnvFile='', patchFunc=identity, containerPatc
     ],
 
   local podEnv =
+    [
+      {
+        name: 'DEBIAN_FRONTEND',
+        value: 'noninteractive',
+      },
+    ] +
     stepEnv +
     [
       { name: f, value: env[f] }

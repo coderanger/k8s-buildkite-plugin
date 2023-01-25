@@ -78,6 +78,7 @@ function(jobName, agentEnv={}, stepEnvFile='', patchFunc=identity, containerPatc
     BUILDKITE_PLUGIN_K8S_SERVICE_ACCOUNT: 'default',
     BUILDKITE_PLUGIN_K8S_WORKDIR: std.join('/', [env.BUILDKITE_BUILD_PATH, buildSubPath]),
     BUILDKITE_PLUGIN_K8S_JOB_TTL_SECONDS_AFTER_FINISHED: '86400',
+    BUILDKITE_PLUGIN_K8S_COMMAND_SHELL: '/bin/bash',
   } + agentEnv,
 
   local stepEnv =
@@ -293,7 +294,7 @@ function(jobName, agentEnv={}, stepEnvFile='', patchFunc=identity, containerPatc
 
   local commandArgs =
     if env.BUILDKITE_COMMAND != '' then {
-      command: [env.BUILDKITE_PLUGIN_K8S_COMMAND_SHELL || '/bin/bash', '-c'],
+      command: [env.BUILDKITE_PLUGIN_K8S_COMMAND_SHELL, '-c'],
       args: ['exec 2>&1; set -xeuo pipefail;' + env.BUILDKITE_COMMAND],
     } else {
       command: [env[f] for f in std.sort(std.objectFields(env), numberSuffix) if std.startsWith(f, 'BUILDKITE_PLUGIN_K8S_ENTRYPOINT_')],

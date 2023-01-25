@@ -65,7 +65,11 @@ configuration:
       type: string
     use-agent-node-affinity:
       type: boolean
+    namespace:
+      type: string
     service-account:
+      type: string
+    command-shell:
       type: string
   required:
   - image

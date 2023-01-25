@@ -293,7 +293,7 @@ function(jobName, agentEnv={}, stepEnvFile='', patchFunc=identity, containerPatc
 
   local commandArgs =
     if env.BUILDKITE_COMMAND != '' then {
-      command: ['/bin/bash', '-c'],
+      command: [env.BUILDKITE_PLUGIN_K8S_COMMAND_SHELL || '/bin/bash', '-c'],
       args: ['exec 2>&1; set -xeuo pipefail;' + env.BUILDKITE_COMMAND],
     } else {
       command: [env[f] for f in std.sort(std.objectFields(env), numberSuffix) if std.startsWith(f, 'BUILDKITE_PLUGIN_K8S_ENTRYPOINT_')],

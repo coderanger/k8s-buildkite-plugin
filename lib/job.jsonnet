@@ -166,6 +166,7 @@ function(jobName, agentEnv={}, stepEnvFile='', patchFunc=identity, containerPatc
     'buildkite/agent-name': env.BUILDKITE_AGENT_NAME,
     'buildkite/job-id': env.BUILDKITE_JOB_ID,
     'job-name': jobName,
+    'cluster-autoscaler.kubernetes.io/safe-to-evict': 'false',
   },
 
   local buildVolume =
@@ -255,7 +256,10 @@ function(jobName, agentEnv={}, stepEnvFile='', patchFunc=identity, containerPatc
           if std.startsWith(f, 'BUILDKITE_PLUGIN_K8S_MOUNT_HOSTPATH')
              && env[f] != ''
         ]
-      ),
+      ) + (if env.BUILDKITE_PLUGIN_K8S_GPU == 'true' then [
+        ['hostpath-gpu-0', '/home/kubernetes/bin/nvidia/bin', '/usr/local/nvidia/bin', 'Directory'],
+        ['hostpath-gpu-1', '/home/kubernetes/bin/nvidia/lib64', '/usr/local/nvidia/lib64', 'Directory'],
+      ] else []),
     mount: [
       { name: c[0], mountPath: c[2] }
       for c in cfg
@@ -303,6 +307,19 @@ function(jobName, agentEnv={}, stepEnvFile='', patchFunc=identity, containerPatc
 
   local deadline = std.parseInt(env.BUILDKITE_TIMEOUT) * 60,
 
+  local nodeSelectorRaw = std.foldl(
+    function(memo, val)
+      memo + {[val[0]]: val[1]},
+    [
+      std.splitLimit(env[f], '=', 2)
+      for f in std.objectFields(env)
+      if std.startsWith(f, 'BUILDKITE_PLUGIN_K8S_NODE_SELECTOR')
+          && env[f] != ''
+    ],
+    {}
+  ),
+  local nodeSelector = if std.length(nodeSelectorRaw) == 0 then { buildkite: "true" } else nodeSelectorRaw,
+
   apiVersion: 'batch/v1',
   kind: 'Job',
   metadata: {
@@ -324,6 +341,22 @@ function(jobName, agentEnv={}, stepEnvFile='', patchFunc=identity, containerPatc
         activeDeadlineSeconds: deadline,
         restartPolicy: 'Never',
         serviceAccountName: env.BUILDKITE_PLUGIN_K8S_SERVICE_ACCOUNT,
+        nodeSelector: nodeSelector,
+        tolerations: [
+          {
+            key: 'buildkite',
+            operator: 'Equal',
+            value: 'present',
+            effect: 'NoSchedule',
+          },
+        ] + (if env.BUILDKITE_PLUGIN_K8S_GPU == 'true' then [
+          {
+            key: 'nvidia.com/gpu',
+            operator: 'Equal',
+            value: 'present',
+            effect: 'NoSchedule',
+          },
+        ] else []),
         initContainers: [
           {
             name: 'bootstrap',
@@ -364,6 +397,10 @@ function(jobName, agentEnv={}, stepEnvFile='', patchFunc=identity, containerPatc
                 +
                 (if env.BUILDKITE_PLUGIN_K8S_RESOURCES_LIMIT_MEMORY != '' then
                    { memory: env.BUILDKITE_PLUGIN_K8S_RESOURCES_LIMIT_MEMORY }
+                 else {})
+                +
+                (if env.BUILDKITE_PLUGIN_K8S_GPU == 'true' then
+                   {'nvidia.com/gpu': '1'}
                  else {}),
             },
             volumeMounts: [

@@ -181,14 +181,16 @@ function(jobName, agentEnv={}, stepEnvFile='', patchFunc=identity, containerPatc
     ],
     {}
   ),
-  local nodeSelector = if std.length(nodeSelectorRaw) == 0 then { buildkite: 'true' } else nodeSelectorRaw,
+  local nodeSelector = if std.length(nodeSelectorRaw) == 0 then
+    { buildkite: 'true', 'cloud.google.com/gke-local-ssd': 'true' }
+    else nodeSelectorRaw,
 
   local buildVolume =
     if env.BUILDKITE_PLUGIN_K8S_BUILD_PATH_PVC != ''
     then { persistentVolumeClaim: { claimName: env.BUILDKITE_PLUGIN_K8S_BUILD_PATH_PVC } }
     else if env.BUILDKITE_PLUGIN_K8S_BUILD_PATH_HOST_PATH != ''
     then { hostPath: { path: env.BUILDKITE_PLUGIN_K8S_BUILD_PATH_HOST_PATH, type: 'DirectoryOrCreate' } }
-    else if std.get(nodeSelector, 'buildkite') == 'true'
+    else if std.get(nodeSelector, 'cloud.google.com/gke-local-ssd') == 'true'
     then { hostPath: { path: '/mnt/disks/ssd0/buildkite', type: 'DirectoryOrCreate' } }
     else { emptyDir: {} }
   ,

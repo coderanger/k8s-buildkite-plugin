@@ -79,6 +79,7 @@ function(jobName, agentEnv={}, stepEnvFile='', patchFunc=identity, containerPatc
     BUILDKITE_PLUGIN_K8S_WORKDIR: std.join('/', [env.BUILDKITE_BUILD_PATH, buildSubPath]),
     BUILDKITE_PLUGIN_K8S_JOB_TTL_SECONDS_AFTER_FINISHED: '86400',
     BUILDKITE_PLUGIN_K8S_COMMAND_SHELL: '/bin/bash',
+    BUILDKITE_PLUGIN_K8S_GPU: 'false',
   } + agentEnv,
 
   local stepEnv =

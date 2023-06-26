@@ -79,6 +79,7 @@ function(jobName, agentEnv={}, stepEnvFile='', patchFunc=identity, containerPatc
     BUILDKITE_PLUGIN_K8S_WORKDIR: std.join('/', [env.BUILDKITE_BUILD_PATH, buildSubPath]),
     BUILDKITE_PLUGIN_K8S_JOB_TTL_SECONDS_AFTER_FINISHED: '86400',
     BUILDKITE_PLUGIN_K8S_COMMAND_SHELL: '/bin/bash',
+    BUILDKITE_PLUGIN_K8S_GPU: 'false',
   } + agentEnv,
 
   local stepEnv =
@@ -166,13 +167,29 @@ function(jobName, agentEnv={}, stepEnvFile='', patchFunc=identity, containerPatc
     'buildkite/agent-name': env.BUILDKITE_AGENT_NAME,
     'buildkite/job-id': env.BUILDKITE_JOB_ID,
     'job-name': jobName,
+    'cluster-autoscaler.kubernetes.io/safe-to-evict': 'false',
   },
+
+  local nodeSelectorRaw = std.foldl(
+    function(memo, val)
+      memo + {[val[0]]: val[1]},
+    [
+      std.splitLimit(env[f], '=', 2)
+      for f in std.objectFields(env)
+      if std.startsWith(f, 'BUILDKITE_PLUGIN_K8S_NODE_SELECTOR')
+          && env[f] != ''
+    ],
+    {}
+  ),
+  local nodeSelector = if std.length(nodeSelectorRaw) == 0 then { buildkite: 'true' } else nodeSelectorRaw,
 
   local buildVolume =
     if env.BUILDKITE_PLUGIN_K8S_BUILD_PATH_PVC != ''
     then { persistentVolumeClaim: { claimName: env.BUILDKITE_PLUGIN_K8S_BUILD_PATH_PVC } }
     else if env.BUILDKITE_PLUGIN_K8S_BUILD_PATH_HOST_PATH != ''
     then { hostPath: { path: env.BUILDKITE_PLUGIN_K8S_BUILD_PATH_HOST_PATH, type: 'DirectoryOrCreate' } }
+    else if std.get(nodeSelector, 'buildkite') == 'true'
+    then { hostPath: { path: '/mnt/disks/ssd0/buildkite', type: 'DirectoryOrCreate' } }
     else { emptyDir: {} }
   ,
 
@@ -255,7 +272,10 @@ function(jobName, agentEnv={}, stepEnvFile='', patchFunc=identity, containerPatc
           if std.startsWith(f, 'BUILDKITE_PLUGIN_K8S_MOUNT_HOSTPATH')
              && env[f] != ''
         ]
-      ),
+      ) + (if env.BUILDKITE_PLUGIN_K8S_GPU == 'true' then [
+        ['hostpath-gpu-0', '/home/kubernetes/bin/nvidia/bin', '/usr/local/nvidia/bin', 'Directory'],
+        ['hostpath-gpu-1', '/home/kubernetes/bin/nvidia/lib64', '/usr/local/nvidia/lib64', 'Directory'],
+      ] else []),
     mount: [
       { name: c[0], mountPath: c[2] }
       for c in cfg
@@ -324,6 +344,22 @@ function(jobName, agentEnv={}, stepEnvFile='', patchFunc=identity, containerPatc
         activeDeadlineSeconds: deadline,
         restartPolicy: 'Never',
         serviceAccountName: env.BUILDKITE_PLUGIN_K8S_SERVICE_ACCOUNT,
+        nodeSelector: nodeSelector,
+        tolerations: [
+          {
+            key: 'buildkite',
+            operator: 'Equal',
+            value: 'present',
+            effect: 'NoSchedule',
+          },
+        ] + (if env.BUILDKITE_PLUGIN_K8S_GPU == 'true' then [
+          {
+            key: 'nvidia.com/gpu',
+            operator: 'Equal',
+            value: 'present',
+            effect: 'NoSchedule',
+          },
+        ] else []),
         initContainers: [
           {
             name: 'bootstrap',
@@ -352,7 +388,7 @@ function(jobName, agentEnv={}, stepEnvFile='', patchFunc=identity, containerPatc
               requests:
                 (if env.BUILDKITE_PLUGIN_K8S_RESOURCES_REQUEST_CPU != '' then
                    { cpu: env.BUILDKITE_PLUGIN_K8S_RESOURCES_REQUEST_CPU }
-                 else {})
+                 else { cpu: "1" })
                 +
                 (if env.BUILDKITE_PLUGIN_K8S_RESOURCES_REQUEST_MEMORY != '' then
                    { memory: env.BUILDKITE_PLUGIN_K8S_RESOURCES_REQUEST_MEMORY }
@@ -364,6 +400,10 @@ function(jobName, agentEnv={}, stepEnvFile='', patchFunc=identity, containerPatc
                 +
                 (if env.BUILDKITE_PLUGIN_K8S_RESOURCES_LIMIT_MEMORY != '' then
                    { memory: env.BUILDKITE_PLUGIN_K8S_RESOURCES_LIMIT_MEMORY }
+                 else {})
+                +
+                (if env.BUILDKITE_PLUGIN_K8S_GPU == 'true' then
+                   {'nvidia.com/gpu': '1'}
                  else {}),
             },
             volumeMounts: [

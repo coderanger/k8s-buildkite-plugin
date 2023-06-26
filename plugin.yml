@@ -71,6 +71,10 @@ configuration:
       type: string
     command-shell:
       type: string
+    node-selector:
+      type: [string, array]
+    gpu:
+      type: boolean
   required:
   - image
   additionalProperties: false

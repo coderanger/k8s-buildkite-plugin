@@ -169,11 +169,26 @@ function(jobName, agentEnv={}, stepEnvFile='', patchFunc=identity, containerPatc
     'cluster-autoscaler.kubernetes.io/safe-to-evict': 'false',
   },
 
+  local nodeSelectorRaw = std.foldl(
+    function(memo, val)
+      memo + {[val[0]]: val[1]},
+    [
+      std.splitLimit(env[f], '=', 2)
+      for f in std.objectFields(env)
+      if std.startsWith(f, 'BUILDKITE_PLUGIN_K8S_NODE_SELECTOR')
+          && env[f] != ''
+    ],
+    {}
+  ),
+  local nodeSelector = if std.length(nodeSelectorRaw) == 0 then { buildkite: 'true' } else nodeSelectorRaw,
+
   local buildVolume =
     if env.BUILDKITE_PLUGIN_K8S_BUILD_PATH_PVC != ''
     then { persistentVolumeClaim: { claimName: env.BUILDKITE_PLUGIN_K8S_BUILD_PATH_PVC } }
     else if env.BUILDKITE_PLUGIN_K8S_BUILD_PATH_HOST_PATH != ''
     then { hostPath: { path: env.BUILDKITE_PLUGIN_K8S_BUILD_PATH_HOST_PATH, type: 'DirectoryOrCreate' } }
+    else if std.get(nodeSelector, 'buildkite') == 'true'
+    then { hostPath: { path: '/mnt/disks/ssd0/buildkite', type: 'DirectoryOrCreate' } }
     else { emptyDir: {} }
   ,
 
@@ -306,19 +321,6 @@ function(jobName, agentEnv={}, stepEnvFile='', patchFunc=identity, containerPatc
     },
 
   local deadline = std.parseInt(env.BUILDKITE_TIMEOUT) * 60,
-
-  local nodeSelectorRaw = std.foldl(
-    function(memo, val)
-      memo + {[val[0]]: val[1]},
-    [
-      std.splitLimit(env[f], '=', 2)
-      for f in std.objectFields(env)
-      if std.startsWith(f, 'BUILDKITE_PLUGIN_K8S_NODE_SELECTOR')
-          && env[f] != ''
-    ],
-    {}
-  ),
-  local nodeSelector = if std.length(nodeSelectorRaw) == 0 then { buildkite: "true" } else nodeSelectorRaw,
 
   apiVersion: 'batch/v1',
   kind: 'Job',

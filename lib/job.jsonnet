@@ -385,7 +385,7 @@ function(jobName, agentEnv={}, stepEnvFile='', patchFunc=identity, containerPatc
               requests:
                 (if env.BUILDKITE_PLUGIN_K8S_RESOURCES_REQUEST_CPU != '' then
                    { cpu: env.BUILDKITE_PLUGIN_K8S_RESOURCES_REQUEST_CPU }
-                 else {})
+                 else { cpu: "1" })
                 +
                 (if env.BUILDKITE_PLUGIN_K8S_RESOURCES_REQUEST_MEMORY != '' then
                    { memory: env.BUILDKITE_PLUGIN_K8S_RESOURCES_REQUEST_MEMORY }

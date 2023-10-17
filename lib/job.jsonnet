@@ -45,7 +45,8 @@ local labelValue(s) =
     if std.setMember(c, labelChars) then c else '_'
     for c in std.stringChars(s)
   ]);
-  if std.length(sanitizedValue) < 63 then sanitizedValue else std.substr(sanitizedValue, 0, 63);
+  local trimmedValue = if std.length(sanitizedValue) < 63 then sanitizedValue else std.substr(sanitizedValue, 0, 63);
+  std.stripChars(trimmedValue, "`~!@#$%^&*()-_=+[{]}\\|;:,<.>/?'\"");
 
 function(jobName, agentEnv={}, stepEnvFile='', patchFunc=identity, containerPatchFunc=identity) patchFunc({
   local buildSubPath = std.join('/', [

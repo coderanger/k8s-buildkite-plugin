@@ -124,7 +124,7 @@ counter=${timeout}
 jobstatus=""
 while [[ -z "$jobstatus" ]] ; do
   set +e
-  jobstatus=$(kubectl get job "${job_name}" -o 'jsonpath={.status.conditions[].type}')
+  jobstatus=$(kubectl get job "${job_name}" -o 'jsonpath={range .status.conditions[?(@.status=="True")]}{.type} {end}')
   set -e
   sleep "$job_status_loop_sleep_interval"
   if [[ $timeout -gt 0 ]]; then
@@ -142,7 +142,7 @@ do
 done
 
 status=1
-if [[ "$jobstatus" == "Complete" ]] ; then
+if [[ "$jobstatus" == *"Complete"* ]] ; then
   echo "success"
   status=0
 fi

@@ -101,6 +101,14 @@ function(jobName, agentEnv={}, stepEnvFile='', patchFunc=identity, containerPatc
         name: 'DEBIAN_FRONTEND',
         value: 'noninteractive',
       },
+      {
+        name: 'BUILDKITE_GIT_CLONE_FLAGS',
+        value: '--filter=blob:none',
+      },
+      {
+        name: 'BUILDKITE_GIT_CLONE_MIRROR_FLAGS',
+        value: '--filter=blob:none',
+      },
     ] +
     stepEnv +
     [
